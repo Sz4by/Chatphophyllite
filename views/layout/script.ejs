@@ -1,0 +1,126 @@
+<script>
+    function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value;
+        const sender = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('chatphophylliteID='))
+            .split('=')[1];
+
+        const user = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('chatphophylliteIDuser='))
+            .split('=')[1];
+
+        var profile = localStorage.getItem('chatphophylliteprofile');
+
+        fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message, sender, profile, user }),
+        })
+            .then(response => response.text())
+            .then(responseText => {
+                console.log(responseText);
+                messageInput.value = ''; // Clear the input field
+            })
+            .catch(error => console.error(error));
+    }
+    function displayMessage(message) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('conversation-item');
+        var chatphophylliteID = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('chatphophylliteID='))
+            .split('=')[1];
+        var senderID = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('chatphophylliteIDuser='))
+            .split('=')[1];
+
+        if (message.sender !== chatphophylliteID) {
+            messageItem.classList.add('me');
+        }
+
+
+        messageItem.innerHTML = `
+        <div class="conversation-item-side">
+            <img class="conversation-item-image" src="${message.profile}" alt="">
+        </div>
+        <div class="conversation-item-content">
+          <div class="conversation-item-wrapper">
+            <div class="conversation-item-box">
+              <div class="conversation-item-text">
+                <p>${message.message}</p>
+                <div class="conversation-item-time">Anonymous-${message.user} | ${message.date} | ${message.timestamp}</div>
+              </div>
+              <div class="conversation-item-dropdown">
+                <button type="button" class="conversation-item-dropdown-toggle"><i class="ri-more-2-line"></i></button>
+                <ul class="conversation-item-dropdown-list">
+                  <li><a href="#"><i class="ri-share-forward-line"></i> Forward</a></li>
+                  <li><a href="#"><i class="ri-delete-bin-line"></i> Delete</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+        chatMessages.appendChild(messageItem);
+    }
+
+    // Connect to the chat stream endpoint for real-time updates
+    const chatStream = new EventSource('/chat-stream');
+    chatStream.addEventListener('message', event => {
+        const message = JSON.parse(event.data);
+        displayMessage(message);
+    });
+
+
+    document.getElementById('changeprofile').addEventListener('click', () => {
+        const imgURL = prompt('Enter the image URL (max 5mb):');
+        if (imgURL) {
+            fetch(imgURL)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    const imgSize = buffer.byteLength / 1024 / 1024; // in MB
+                    if (imgSize > 5) {
+                        alert('Image size is too big. Maximum size is 5MB.');
+                    } else {
+                        localStorage.setItem('chatphophylliteprofile', imgURL);
+                        alert('Profile image URL saved!');
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+    });
+
+
+
+    var profile = localStorage.getItem('chatphophylliteprofile');
+    if (profile) {
+        document.getElementById('pfp').src = profile;
+    }
+
+
+    function openConversation() {
+        setTimeout(function () {
+            var conversationMain = document.getElementById('conversationMain');
+            conversationMain.style.transition = 'scroll 0.5s ease';
+            conversationMain.scrollTop = conversationMain.scrollHeight;
+            setTimeout(function () {
+                conversationMain.style.transition = '';
+            }, 500);
+        }, 500);
+    }
+
+    function chatdown() {
+        // Code to open the conversation goes here
+
+        // Scroll to the bottom of the conversation
+        var conversationMain = document.getElementById('conversationMain');
+        conversationMain.scrollTop = conversationMain.scrollHeight;
+    }
+</script>
